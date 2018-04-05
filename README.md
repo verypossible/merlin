@@ -1,6 +1,6 @@
 # Merlin
 
-[Docs](https://hexdocs.pm/merlin](https://hexdocs.pm/merlin)
+[Docs](https://hexdocs.pm/merlin)
 
 A wise alchemist to guide your project's setup.
 
