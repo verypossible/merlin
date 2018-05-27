@@ -8,21 +8,21 @@ defmodule Merlin.MixProject do
       elixir: "~> 1.6",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
-      package: package()
+      package: package(),
+      docs: docs()
     ]
   end
 
-  # Run "mix help compile.app" to learn about applications.
   def application do
     [
       extra_applications: [:logger]
     ]
   end
 
-  # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:ex_doc, ">= 0.0.0", only: :dev}
+      {:ex_doc, "~> 0.0", only: :dev},
+      {:clhi, "~> 0.0", only: :dev}
     ]
   end
 
@@ -33,5 +33,9 @@ defmodule Merlin.MixProject do
       licenses: ["MIT"],
       links: %{"GitHub" => "https://github.com/verypossible/merlin"}
     ]
+  end
+
+  defp docs do
+    [extras: ["README.md"]]
   end
 end
