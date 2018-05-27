@@ -73,27 +73,39 @@ defmodule Merlin.Config do
         }
 
   @doc """
-  Read the config file at `path` into a `Merlin.Config` struct.
-
-  If `path` is  `nil`, look for `.merlin.exs` in the project's root.
+  Read the config file at the project root into a `Merlin.Config` struct.
   """
-  @spec get(String.t() | nil) :: {:ok, t} | {:error, any()}
-  def get(path \\ nil)
+  @spec get :: {:ok, t} | {:error, any()}
+  def get, do: get("")
 
-  def get(nil) do
-    # TODO implement
+  @doc """
+  Read the config file at `path` into a `Merlin.Config` struct.
+  """
+  @spec get(String.t() | nil) :: {:ok, t} | {:error, :not_found}
+  def get(path) do
+    case File.read(path) do
+      {:ok, raw_config} -> parse_config(raw_config)
+      {:error, :enoent} -> {:error, :not_found}
+    end
   end
 
-  def get(_) do
-    # TODO implement
+  defp parse_config(raw_config) do
+    config = Code.eval_string(raw_config)
+    IO.inspect(config)
   end
 
   @doc """
   Writes `config` to the project root as `.merlin.exs`.
   """
-  @spec write(t) :: :ok | {:error, any()}
-  def write(_config) do
-    # TODO implement
+  @spec write(t) :: {:ok, Path.t()} | {:error, any()}
+  def write(config) do
+    path = ".merlin.exs"
+    data = Code.format_string!("#{inspect(config)}")
+
+    case File.write(path, data) do
+      :ok -> {:ok, path}
+      {:error, _} = error -> error
+    end
   end
 
   @doc """
@@ -151,13 +163,7 @@ defmodule Merlin.Config do
   """
   @spec tool_versions :: tool_versions()
   def tool_versions do
-    tail =
-      case has_package_json?() do
-        true -> [tool_version(:nodejs)]
-        false -> []
-      end
-
-    [{:elixir, tagged_tool_version(:elixir)}, {:erlang, tagged_tool_version(:erlang)} | tail]
+    [{:elixir, tagged_tool_version(:elixir)}, {:erlang, tagged_tool_version(:erlang)}]
   end
 
   @doc """
@@ -177,7 +183,7 @@ defmodule Merlin.Config do
       {:credo, "~> 0.0", only: [:dev, :test], runtime: false},
       {:dialyxir, "~> 0.0", runtime: false},
       {:faker, "~> 0.0"},
-      {:mix_test_watch, "~> 0.0", only: [:test], runtime: false},
+      {:mix_test_watch, "~> 0.0", only: [:dev], runtime: false},
       {:mox, "~> 0.0"},
       {:sentry, "~> 6.0"}
     ]
@@ -209,20 +215,6 @@ defmodule Merlin.Config do
 
   def tool_version(:erlang) do
     "20.3"
-  end
-
-  def tool_version(:nodejs) do
-    "10.0.0"
-  end
-
-  @doc """
-  Returns true if a `package.json` file is being used.
-
-  TODO document how this is determined.
-  """
-  @spec has_package_json? :: boolean()
-  def has_package_json? do
-    # TODO implement
   end
 
   defp tagged_tool_version(tool), do: {tool, tool_version(tool)}
