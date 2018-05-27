@@ -18,16 +18,16 @@ defmodule Mix.Tasks.Merlin do
   use Mix.Task
   alias Merlin.Config
 
+  @path_write ".merlin.exs"
+
   @impl Mix.Task
   def run(args) do
     %{path: path} = parse_args(args)
     {config, _do_prompt} = get_config(path)
-    persist_config(config)
+    step(:persist_config, config)
   end
 
   defp parse_args(args) do
-    Clhi.info("args: #{inspect(args)}")
-
     {parsed, _args, _invalid} =
       OptionParser.parse(args, strict: [config: :string, no_config: :boolean])
 
@@ -40,22 +40,69 @@ defmodule Mix.Tasks.Merlin do
         {config, false}
 
       {:error, :not_found} ->
-        Clhi.info("using default config")
+        Clhi.info("Using default config.")
         {Config.new(), true}
 
       {:error, error} ->
-        Clhi.info("reading config failed: #{inspect(error)}")
+        Clhi.error(["Reading config failed:", "\n\n", "#{inspect(error)}"])
+    end
+  end
+
+  defp step(:persist_config, config) do
+    with :ok <- should_persist_config(),
+         :ok <- can_persist_config() do
+      persist_config(config)
+    else
+      {:error, error} when error in [:no_persist, :no_overwrite] ->
+        Clhi.info(["Config not persisted:", "\n\n", "#{inspect(config, pretty: true)}"])
+    end
+  end
+
+  defp should_persist_config do
+    case Clhi.ask(
+           "Create a .merlin.exs config with your choices?",
+           [],
+           boolean_options: true,
+           default: "y"
+         ) do
+      true -> :ok
+      false -> {:error, :no_persist}
+    end
+  end
+
+  defp can_persist_config do
+    case File.exists?(@path_write) do
+      true ->
+        can_overwrite_config()
+
+      false ->
+        :ok
+    end
+  end
+
+  defp can_overwrite_config do
+    case Clhi.ask(
+           "A .merlin.exs config already exists, overwrite it?",
+           [],
+           boolean_options: true,
+           default: "n",
+           level: :warn
+         ) do
+      true -> :ok
+      false -> {:error, :no_overwrite}
     end
   end
 
   defp persist_config(config) do
     case Config.write(config) do
       {:ok, path} ->
-        Clhi.info(~s(config persisted to "#{path}"))
+        Clhi.info(~s(Config persisted to "#{path}".))
 
       {:error, error} ->
         Clhi.error([
-          "failed to persist config with error: #{inspect(error)}",
+          "Failed to persist config with error:",
+          "\n\n",
+          "#{inspect(error)}",
           "\n\n",
           "config:",
           "\n\n",

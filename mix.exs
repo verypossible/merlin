@@ -23,7 +23,7 @@ defmodule Merlin.MixProject do
     [
       {:ex_doc, "~> 0.0", only: :dev},
       {:mix_test_watch, "~> 0.0", only: :dev, runtime: false},
-      {:clhi, "~> 0.0", only: :dev}
+      {:clhi, "~> 0.0", runtime: false}
     ]
   end
 
